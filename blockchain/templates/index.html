@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Blockchain Miner</title>
+
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/vendor/DataTables/css/datatables.min.css">
+    <link rel="stylesheet" href="/static/vendor/font-awesome/font-awesome.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+
+
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a href="#" class="navbar-brand">Blockchain Miner</a>
+
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item active">
+                        <a href="/" class="nav-link">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/make/transaction" class="nav-link">Configure</a>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12 text-center">
+                <div class="card-body">
+                    <h4 class="card-title">Transaction to be added to the next block</h4>
+                    <button type="submit" id="refresh_transactions" class="btn btn-primary" onclick="window.location.reload();">
+                        <i class="fa fa-refresh" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <table id="unmined_transactions_table" class="table table-bordered" cellspacing="0" width="100%">
+
+        </table>
+        <div class="col-lg-12 text-center">
+            <input type="button" id="mine_btn" class="btn btn-primary btn-lg" value="Mine">
+
+        </div>
+    </div>
+     <div class="container">
+        <div class="row">
+            <div class="col-lg-12 text-center">
+                <div class="card-body">
+                    <h4 class="card-title">Transaction on the Blockchain</h4>
+                    <button type="submit" id="refresh_blockchain" class="btn btn-primary">
+                        <i class="fa fa-refresh" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <table id="transactions_table" class="table table-bordered" cellspacing="0" width="100%">
+
+        </table>
+    </div>
+
+
+
+
+    <script src="/static/vendor/jquery/jquery.min.js"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/vendor/DataTables/js/datatables.min.js"></script>
+    <script src="/static/vendor/DataTables/js/ellipsis.js"></script>
+    <script src="https://kit.fontawesome.com/c99b7fc405.js" crossorigin="anonymous"></script>
+
+
+    <script>
+
+        $(function(){
+
+        //ajax request to show blocks on UI , using /chain end point
+            $.ajax({
+                url : '/chain',
+                type : 'GET',
+                success : function(response){
+                    let transactions = [];
+                    let count = 1;
+                    for(let j=0;j<response['chain'].length;j++){
+                        for(let i=0;i<response['chain'][j]['transactions'].length;i++){
+                            let transaction=[
+                                count,
+                                response['chain'][j]['transactions'][i]['sender_public_key'],
+                                response['chain'][j]['transactions'][i]['recipient_public_key'],
+                                response['chain'][j]['transactions'][i]['amount'],
+                                response['chain'][j]['timestamp'],
+                                response['chain'][j]['block_number']
+                            ];
+                            transactions.push(transaction);
+                            count+=1;
+                        }
+                    }
+
+                        $('#transactions_table').dataTable({
+                        data:transactions,
+                        columns:[
+                        {title : '#'},
+                        {title : 'Sender Public Key'},
+                        {title : 'Recipient Public Key'},
+                        {title : 'Amount'},
+                        {title : 'Time Stamp'},
+                        {title : 'Block Number'}
+                        ],
+                        columnDefs :[{targets:[1,2,3,4,5] , render:$.fn.dataTable.render.ellipsis(25)}]
+                    });
+
+                },
+                error : function(error){
+                    console.log(error);
+                }
+            });
+
+        //ajax request to show transactions on UI , using /transactions/get end points
+            $.ajax({
+                url : '/transactions/get',
+                type : 'GET',
+                success :function(response){
+                    let transactions = [];
+                    let count =1;
+                    for(let i=0;i<response['transactions'].length;i++){
+                        let transaction=[
+                        count,
+                        response['transactions'][i]['sender_public_key'],
+                        response['transactions'][i]['recipient_public_key'],
+                        response['transactions'][i]['amount']
+                        ];
+                        transactions.push(transaction);
+                        count+=1;
+                    }
+
+                    $('#unmined_transactions_table').dataTable({
+                        data:transactions,
+                        columns:[
+                        {title : '#'},
+                        {title : 'Sender Public Key'},
+                        {title : 'Recipient Public Key'},
+                        {title : 'Amount'}
+                        ],
+                        columnDefs :[{targets:[1,2,3] , render:$.fn.dataTable.render.ellipsis(25)}]
+                    });
+                },
+                error :function(error){
+                console.log(error);
+                }
+            });
+
+          });
+
+           $('#mine_btn').click(function(){
+            $.ajax({
+            url : '/mine',
+            type : 'GET',
+            success : function(response){
+            window.location.reload();
+            },
+            error : function(error){
+            console.log(error);
+            }
+
+            });
+            });
+
+
+
+    </script>
+
+</body>
+</html>
